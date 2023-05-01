@@ -18,7 +18,7 @@ ruoyi:
 # 开发环境配置
 server:
   # 服务器的HTTP端口，默认为8080
-  port: 8080
+  port: 2001
   servlet:
     # 应用的访问路径
     context-path: /
@@ -49,12 +49,76 @@ user:
 
 # Spring配置
 spring:
+  #环境
+  profiles:
+    active: loc
+#    active: yun
+  # 数据源配置
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driverClassName: com.mysql.cj.jdbc.Driver
+    druid:
+      # 主库数据源
+      master:
+        url: jdbc:mysql://114.116.95.152:3306/bang-ry?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+        username: root
+        password: Qjp202228.
+      # 从库数据源
+      slave:
+        # 从数据源开关/默认关闭
+        enabled: false
+        url:
+        username:
+        password:
+      # 初始连接数
+      initialSize: 5
+      # 最小连接池数量
+      minIdle: 10
+      # 最大连接池数量
+      maxActive: 20
+      # 配置获取连接等待超时的时间
+      maxWait: 60000
+      # 配置连接超时时间
+      connectTimeout: 30000
+      # 配置网络超时时间
+      socketTimeout: 60000
+      # 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒
+      timeBetweenEvictionRunsMillis: 60000
+      # 配置一个连接在池中最小生存的时间，单位是毫秒
+      minEvictableIdleTimeMillis: 300000
+      # 配置一个连接在池中最大生存的时间，单位是毫秒
+      maxEvictableIdleTimeMillis: 900000
+      # 配置检测连接是否有效
+      validationQuery: SELECT 1 FROM DUAL
+      testWhileIdle: true
+      testOnBorrow: false
+      testOnReturn: false
+      webStatFilter:
+        enabled: true
+      statViewServlet:
+        enabled: true
+        # 设置白名单，不填则允许所有访问
+        allow:
+        url-pattern: /druid/*
+        # 控制台管理用户名和密码
+        login-username: ruoyi
+        login-password: 123456
+      filter:
+        stat:
+          enabled: true
+          # 慢SQL记录
+          log-slow-sql: true
+          slow-sql-millis: 1000
+          merge-sql: true
+        wall:
+          config:
+            multi-statement-allow: true
   # 资源信息
   messages:
     # 国际化资源文件路径
     basename: i18n/messages
-  profiles: 
-    active: druid
+  main:
+    allow-circular-references: true #依赖循环
   # 文件上传
   servlet:
      multipart:
@@ -67,16 +131,38 @@ spring:
     restart:
       # 热部署开关
       enabled: true
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher # 解决swagger与高版本SpringBoot的冲突
+  # 邮箱设置
+  mail:
+    host: smtp.qq.com
+    username: 915950092@qq.com
+    #    password: xsydehiaawrgbecf
+    password: llshwdspbllibcah
+    port: 465
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          socketFactory:
+            port: 465
+            class: javax.net.ssl.SSLSocketFactory
+            fallback: false
+          starttls:
+            enable: true
+            required: true
   # redis 配置
   redis:
     # 地址
-    host: localhost
+    host: 114.116.95.152
     # 端口，默认为6379
     port: 6379
     # 数据库索引
-    database: 0
+    database: 1
     # 密码
-    password: 
+    password: '010128'
     # 连接超时时间
     timeout: 10s
     lettuce:
@@ -89,7 +175,9 @@ spring:
         max-active: 8
         # #连接池最大阻塞等待时间（使用负值表示没有限制）
         max-wait: -1ms
-
+  cache:
+    redis:
+      time-to-live: 1800000      #设置缓存过期时间  30分钟
 # token配置
 token:
     # 令牌自定义标识
@@ -98,16 +186,34 @@ token:
     secret: abcdefghijklmnopqrstuvwxyz
     # 令牌有效期（默认30分钟）
     expireTime: 30
-  
-# MyBatis配置
-mybatis:
-    # 搜索指定包别名
-    typeAliasesPackage: com.ruoyi.**.domain
-    # 配置mapper的扫描，找到所有的mapper.xml映射文件
-    mapperLocations: classpath*:mapper/**/*Mapper.xml
-    # 加载全局的配置文件
-    configLocation: classpath:mybatis/mybatis-config.xml
-
+# minio
+minio:
+  endpoint: http://114.116.95.152:9000
+  accessKey: 915950092
+  secretKey: 20010128
+  bucketName: bang
+## MyBatis配置
+#mybatis:
+#    # 搜索指定包别名
+#    typeAliasesPackage: com.ruoyi.**.domain
+#    # 配置mapper的扫描，找到所有的mapper.xml映射文件
+#    mapperLocations: classpath*:mapper/**/*Mapper.xml
+#    # 加载全局的配置文件
+#    configLocation: classpath:mybatis/mybatis-config.xml
+mybatis-plus:
+  # 指定实体类所在包的路径，MyBatis-Plus 会自动扫描该路径下的实体类
+  typeAliasesPackage: com.ruoyi.**.domain
+  # 指定 Mapper 接口所在包的路径，MyBatis-Plus 会自动扫描该路径下的 Mapper 接口
+  mapperLocations: classpath*:mapper/**/*Mapper.xml
+  # 指定 MyBatis 全局配置文件的位置
+  #  configLocation: classpath:mybatis/mybatis-config.xml
+  configuration:
+    #在映射实体或者属性时，将数据库中表名和字段名中的下划线去掉，按照驼峰命名法映射
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID
 # PageHelper分页插件
 pagehelper: 
   helperDialect: mysql
@@ -119,8 +225,15 @@ swagger:
   # 是否开启swagger
   enabled: true
   # 请求前缀
-  pathMapping: /dev-api
-
+  pathMapping:
+  base-package: com.ruoyi.bang
+  title: "帮帮接口文档"
+  description: "帮帮接口文档"
+markerhub:
+  jwt:
+    secret: ef3af8bea39cb01a963160421b81850c
+    expire: 604800
+    header: Authorization
 # 防止XSS攻击
 xss: 
   # 过滤开关

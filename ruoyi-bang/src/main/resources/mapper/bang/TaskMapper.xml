@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.bang.mapper.TaskMapper">
+    
+    <resultMap type="Task" id="TaskResult">
+        <result property="id"    column="id"    />
+        <result property="fromId"    column="from_id"    />
+        <result property="toId"    column="to_id"    />
+        <result property="title"    column="title"    />
+        <result property="details"    column="details"    />
+        <result property="urgent"    column="urgent"    />
+        <result property="state"    column="state"    />
+        <result property="typeId"    column="type_id"    />
+        <result property="money"    column="money"    />
+        <result property="location"    column="location"    />
+        <result property="releaseTime"    column="release_time"    />
+        <result property="limitTime"    column="limit_time"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectTaskVo">
+        select id, from_id, to_id, title, details, urgent, state, type_id, money, location, release_time, limit_time, create_by, create_time, update_by, update_time, remark from task
+    </sql>
+
+    <select id="selectTaskList" parameterType="Task" resultMap="TaskResult">
+        <include refid="selectTaskVo"/>
+        <where>  
+            <if test="fromId != null  and fromId != ''"> and from_id = #{fromId}</if>
+            <if test="toId != null  and toId != ''"> and to_id = #{toId}</if>
+            <if test="title != null  and title != ''"> and title like concat('%', #{title}, '%')</if>
+            <if test="details != null  and details != ''"> and details like concat('%', #{details}, '%')</if>
+            <if test="urgent != null "> and urgent = #{urgent}</if>
+            <if test="state != null "> and state = #{state}</if>
+            <if test="typeId != null  and typeId != ''"> and type_id = #{typeId}</if>
+            <if test="money != null  and money != ''"> and money = #{money}</if>
+            <if test="location != null  and location != ''"> and location like concat('%', #{location}, '%')</if>
+            <if test="releaseTime != null "> and release_time = #{releaseTime}</if>
+            <if test="limitTime != null "> and limit_time = #{limitTime}</if>
+        </where>
+    </select>
+    
+    <select id="selectTaskById" parameterType="String" resultMap="TaskResult">
+        <include refid="selectTaskVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertTask" parameterType="Task">
+        insert into task
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">id,</if>
+            <if test="fromId != null and fromId != ''">from_id,</if>
+            <if test="toId != null">to_id,</if>
+            <if test="title != null">title,</if>
+            <if test="details != null">details,</if>
+            <if test="urgent != null">urgent,</if>
+            <if test="state != null">state,</if>
+            <if test="typeId != null">type_id,</if>
+            <if test="money != null">money,</if>
+            <if test="location != null">location,</if>
+            <if test="releaseTime != null">release_time,</if>
+            <if test="limitTime != null">limit_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">#{id},</if>
+            <if test="fromId != null and fromId != ''">#{fromId},</if>
+            <if test="toId != null">#{toId},</if>
+            <if test="title != null">#{title},</if>
+            <if test="details != null">#{details},</if>
+            <if test="urgent != null">#{urgent},</if>
+            <if test="state != null">#{state},</if>
+            <if test="typeId != null">#{typeId},</if>
+            <if test="money != null">#{money},</if>
+            <if test="location != null">#{location},</if>
+            <if test="releaseTime != null">#{releaseTime},</if>
+            <if test="limitTime != null">#{limitTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateTask" parameterType="Task">
+        update task
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="fromId != null and fromId != ''">from_id = #{fromId},</if>
+            <if test="toId != null">to_id = #{toId},</if>
+            <if test="title != null">title = #{title},</if>
+            <if test="details != null">details = #{details},</if>
+            <if test="urgent != null">urgent = #{urgent},</if>
+            <if test="state != null">state = #{state},</if>
+            <if test="typeId != null">type_id = #{typeId},</if>
+            <if test="money != null">money = #{money},</if>
+            <if test="location != null">location = #{location},</if>
+            <if test="releaseTime != null">release_time = #{releaseTime},</if>
+            <if test="limitTime != null">limit_time = #{limitTime},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteTaskById" parameterType="String">
+        delete from task where id = #{id}
+    </delete>
+
+    <delete id="deleteTaskByIds" parameterType="String">
+        delete from task where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
