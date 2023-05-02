@@ -189,5 +189,21 @@ public interface PostService extends IService<Post> {
      * @return
      */
     int topicNum(String id);
+
+    /**
+     * 话题列表(个人主页)
+     * @param openid
+     * @return
+     */
+    R personalTopic(String openid);
+
+    /**
+     * 个人评论(个人主页)
+     * @param openid
+     * @return
+     */
+    R personalComment(String openid);
+
+
 }
 

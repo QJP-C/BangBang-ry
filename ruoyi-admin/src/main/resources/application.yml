@@ -51,9 +51,9 @@ user:
 spring:
   #环境
   profiles:
-    active: loc
-#    active: yun
-  # 数据源配置
+#    active: loc
+    active: yun
+  # 数据源配置-
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driverClassName: com.mysql.cj.jdbc.Driver

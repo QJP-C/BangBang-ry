@@ -42,8 +42,9 @@ public class TopicController {
 
     @ApiOperation("话题列表")
     @GetMapping("list")
-    public R<List<Topic>> getList(@RequestParam(value = "search",required = false)String search){
-        return topicService.getList(search);
+    public R<List<Topic>> getList(@RequestHeader("Authorization") String header,@RequestParam(value = "search",required = false)String search){
+        String openid = jwtUtil.getOpenidFromToken(header);
+        return topicService.getList(search,openid);
     }
 
     @ApiOperation("关注/取关话题")

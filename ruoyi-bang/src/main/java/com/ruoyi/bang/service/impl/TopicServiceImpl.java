@@ -48,7 +48,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
      * @return
      */
     @Override
-    public R<List<Topic>> getList(String search) {
+    public R<List<Topic>> getList(String search, String openid) {
         LambdaQueryWrapper<Topic> qw = new LambdaQueryWrapper<>();
         if (search!=null){
             qw.like(Topic::getName,search);
@@ -60,6 +60,8 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         for (Topic topic : list) {
             int num =postService.topicNum(topic.getId());
             topic.setNum(num);
+            boolean isJoin = topicIsFollow(openid,topic.getId());
+            topic.setJoin(isJoin);
         }
         return R.success(list);
     }

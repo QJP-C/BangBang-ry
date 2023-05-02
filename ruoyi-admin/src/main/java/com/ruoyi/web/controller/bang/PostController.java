@@ -41,7 +41,7 @@ public class PostController {
     @PostMapping("newPost")
     public R<String> savePost(@RequestHeader("Authorization") String header, @RequestBody PostNewParamDto postNewParamDto) {
         String openid = jwtUtil.getOpenidFromToken(header);
-        return postService.savePost(openid, postNewParamDto,new Post());
+        return postService.savePost(openid, postNewParamDto, new Post());
     }
 
     @ApiOperation("帖子详情")
@@ -108,9 +108,9 @@ public class PostController {
     public R queryPostOfRecommend(@RequestHeader("Authorization") String header,
                                   @RequestParam("page") int page,
                                   @RequestParam("pageSize") int pageSize,
-                                  @RequestParam(value = "search",required = false)String search) {
+                                  @RequestParam(value = "search", required = false) String search) {
         String openid = jwtUtil.getOpenidFromToken(header);
-        return postService.queryPostOfRecommend(openid, page, pageSize,search);
+        return postService.queryPostOfRecommend(openid, page, pageSize, search);
     }
 
     @ApiOperation("图文")
@@ -118,12 +118,12 @@ public class PostController {
     public R queryPostOfImageText(@RequestHeader("Authorization") String header,
                                   @RequestParam("page") int page,
                                   @RequestParam("pageSize") int pageSize,
-                                  @RequestParam(value = "search",required = false)String search) {
+                                  @RequestParam(value = "search", required = false) String search) {
         String openid = jwtUtil.getOpenidFromToken(header);
-        return postService.queryPostOfImageText(openid, page, pageSize,search);
+        return postService.queryPostOfImageText(openid, page, pageSize, search);
     }
 
-    @ApiOperation("个人动态")
+    @ApiOperation("个人动态(个人主页)")
     @GetMapping("listByPersonal")
     public R queryPostOfPersonal(@RequestHeader("Authorization") String header,
                                  @RequestParam(value = "openid", required = false) String openid,
@@ -135,13 +135,35 @@ public class PostController {
         return postService.queryPostOfPersonal(openid, page, pageSize);
     }
 
-    @ApiOperation("我的收藏(帖子)")
+    @ApiOperation("话题列表(个人主页)")
+    @GetMapping("personalTopic")
+    public R personalTopic(@RequestHeader("Authorization") String header,
+                           @RequestParam(value = "openid", required = false) String openid) {
+        if (StringUtil.isNullOrEmpty(openid)) {
+            openid = jwtUtil.getOpenidFromToken(header);
+        }
+        return postService.personalTopic(openid);
+    }
+
+    @ApiOperation("个人评论(个人主页)")
+    @GetMapping("personalComment")
+    public R personalComment(@RequestHeader("Authorization") String header,
+                             @RequestParam(value = "openid", required = false) String openid) {
+        if (StringUtil.isNullOrEmpty(openid)) {
+            openid = jwtUtil.getOpenidFromToken(header);
+        }
+        return postService.personalComment(openid);
+    }
+
+    @ApiOperation("个人收藏(帖子)(个人主页)")
     @GetMapping("myCollect")
     public R queryPostOfMyCollect(@RequestHeader("Authorization") String header,
+                                  @RequestParam(value = "openid", required = false) String openid,
                                   @RequestParam("page") int page,
                                   @RequestParam("pageSize") int pageSize) {
-
-        String openid = jwtUtil.getOpenidFromToken(header);
+        if (openid == null) {
+            openid = jwtUtil.getOpenidFromToken(header);
+        }
         return postService.queryPostOfMyCollect(openid, page, pageSize);
     }
 
@@ -168,5 +190,6 @@ public class PostController {
         String openid = jwtUtil.getOpenidFromToken(header);
         return postService.commentList(openid, postId, page, pageSize);
     }
+
 
 }

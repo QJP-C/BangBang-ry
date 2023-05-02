@@ -6,10 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.bang.common.R;
-import com.ruoyi.bang.domain.Post;
-import com.ruoyi.bang.domain.PostCollect;
-import com.ruoyi.bang.domain.PostComment;
-import com.ruoyi.bang.domain.UserFollow;
+import com.ruoyi.bang.domain.*;
 import com.ruoyi.bang.dto.*;
 import com.ruoyi.bang.exception.BangException;
 import com.ruoyi.bang.mapper.PostMapper;
@@ -47,6 +44,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
 
     @Resource
     private TopicService topicService;
+    @Resource
+    private TopicFollowService topicFollowService;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
     @Resource
@@ -445,11 +444,63 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         if (!haveOne) BangException.cast("该用户不存在！");
         LambdaQueryWrapper<Post> qw = new LambdaQueryWrapper<>();
         qw.eq(Post::getUserId,openid).orderByDesc(Post::getReleaseTime);
-        List<Post> list = this.list();
-        //按点赞数降序
-        ListUtil.sortByProperty(list,"likeNum");
-        ListUtil.reverse(list);
-        return R.success(list);
+        Page<PostListResDto> postListResDtos = getPostListResDtos(openid, qw, page, pageSize);
+        return R.success(postListResDtos);
+    }
+
+    /**
+     * 话题列表(个人主页)
+     * @param openid
+     * @return
+     */
+    @Override
+    public R personalTopic(String openid) {
+        LambdaQueryWrapper<TopicFollow> qw = new LambdaQueryWrapper<>();
+        qw.eq(TopicFollow::getUserId,openid);
+        List<TopicFollow> list = topicFollowService.list(qw);
+        List<Topic> res = list.stream().map(topicFollow -> {
+            String topicId = topicFollow.getTopicId();
+            return topicService.getById(topicId);
+        }).collect(Collectors.toList());
+        PersonalTopicDto personalTopicDto = new PersonalTopicDto();
+        personalTopicDto.setRes(res);
+        personalTopicDto.setFollowNum(list.size());
+        return R.success(personalTopicDto);
+    }
+
+    /**
+     * 个人评论(个人主页)
+     * @param openid
+     * @return
+     */
+    @Override
+    public R personalComment(String openid) {
+        LambdaQueryWrapper<PostComment> qw = new LambdaQueryWrapper<>();
+        qw.eq(PostComment::getUserId,openid).orderByDesc(PostComment::getCommentTime);
+        int count = postCommentService.count(qw);
+        if (count<=0) return R.success("这个人还没有评论过别人！");
+        List<PostComment> list = postCommentService.list(qw);
+        List<PersonalCommentDto> dtos = list.stream().map(postComment -> {
+            String postId = postComment.getPostId();
+            //帖子对象信息
+            Post post = this.getById(postId);
+            //发评论对象信息
+            Map<String, String> oneInfo = userService.getOneInfo(openid);
+            //发帖对象信息
+            Map<String, String> info = userService.getOneInfo(post.getUserId());
+            PersonalCommentDto dto = new PersonalCommentDto();
+            dto.setUserId(openid);
+            dto.setHead(oneInfo.get("head"));
+            dto.setUsername(oneInfo.get("username"));
+            dto.setCommentId(postComment.getId());
+            dto.setCommentText(postComment.getText());
+            dto.setCommentTime(postComment.getCommentTime());
+            dto.setToUsername(info.get("username"));
+            dto.setPostId(postComment.getPostId());
+            dto.setPostText(post.getText());
+            return dto;
+        }).collect(Collectors.toList());
+        return R.success(dtos);
     }
 
     /**
@@ -562,6 +613,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         BeanUtils.copyProperties(pageInfo, dtoPage, "records");
         List<PostCommentListDto> resDtoList = list.stream().map(postComment -> {
             PostCommentListDto dto = new PostCommentListDto();
+            BeanUtils.copyProperties(postComment,dto);
             //获取发帖人信息
             Map<String,String> userInfo = userService.getOneInfo(postComment.getUserId());
             dto.setHead(userInfo.get("head"));
@@ -576,6 +628,9 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         dtoPage.setRecords(resDtoList);
         //按点赞数降序
         dtoPage.setRecords(ListUtil.sortByProperty(dtoPage.getRecords(),"likeNum"));
+        dtoPage.setRecords(ListUtil.reverse(dtoPage.getRecords()));
+        //按点赞数降序
+        dtoPage.setRecords(ListUtil.sortByProperty(dtoPage.getRecords(),"commentTime"));
         dtoPage.setRecords(ListUtil.reverse(dtoPage.getRecords()));
         return R.success(dtoPage);
     }
@@ -628,6 +683,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         qw.eq(Post::getTopicId,id);
         return this.count();
     }
+
 
     @Autowired
     private PostMapper postMapper;

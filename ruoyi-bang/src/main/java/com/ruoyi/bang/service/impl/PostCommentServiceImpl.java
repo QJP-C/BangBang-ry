@@ -27,6 +27,7 @@ public class PostCommentServiceImpl extends ServiceImpl<PostCommentMapper, PostC
     @Override
     public boolean commentPost(String openid, String postId, String text) {
         PostComment postComment = new PostComment();
+        postComment.setUserId(openid);
         postComment.setText(text);
         postComment.setPostId(postId);
         postComment.setCommentTime(LocalDateTime.now());
