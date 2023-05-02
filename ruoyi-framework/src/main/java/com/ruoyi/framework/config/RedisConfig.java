@@ -4,9 +4,12 @@ import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
@@ -37,6 +40,20 @@ public class RedisConfig extends CachingConfigurerSupport
 
         template.afterPropertiesSet();
         return template;
+    }
+    /**
+     * 设置序列化等缓存配置
+     *
+     * @return
+     */
+    @Bean
+    public RedisCacheConfiguration redisCacheConfiguration() {
+        RedisCacheConfiguration redisCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig();
+        // 设置序列化的方式
+        redisCacheConfiguration = redisCacheConfiguration.serializeValuesWith(RedisSerializationContext
+                .SerializationPair
+                .fromSerializer(RedisSerializer.json()));
+        return redisCacheConfiguration;
     }
 
     @Bean

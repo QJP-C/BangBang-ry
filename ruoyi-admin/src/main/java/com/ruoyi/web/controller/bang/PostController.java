@@ -3,6 +3,8 @@ package com.ruoyi.web.controller.bang;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ruoyi.bang.common.R;
+import com.ruoyi.bang.domain.Post;
+import com.ruoyi.bang.dto.CommentDto;
 import com.ruoyi.bang.dto.PostDetDto;
 import com.ruoyi.bang.dto.PostListResDto;
 import com.ruoyi.bang.dto.PostNewParamDto;
@@ -15,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import java.util.Map;
 
 /**
  * (Post)表控制层
@@ -40,7 +41,7 @@ public class PostController {
     @PostMapping("newPost")
     public R<String> savePost(@RequestHeader("Authorization") String header, @RequestBody PostNewParamDto postNewParamDto) {
         String openid = jwtUtil.getOpenidFromToken(header);
-        return postService.savePost(openid, postNewParamDto);
+        return postService.savePost(openid, postNewParamDto,new Post());
     }
 
     @ApiOperation("帖子详情")
@@ -106,18 +107,20 @@ public class PostController {
     @GetMapping("listByRecommend")
     public R queryPostOfRecommend(@RequestHeader("Authorization") String header,
                                   @RequestParam("page") int page,
-                                  @RequestParam("pageSize") int pageSize) {
+                                  @RequestParam("pageSize") int pageSize,
+                                  @RequestParam(value = "search",required = false)String search) {
         String openid = jwtUtil.getOpenidFromToken(header);
-        return postService.queryPostOfRecommend(openid, page, pageSize);
+        return postService.queryPostOfRecommend(openid, page, pageSize,search);
     }
 
     @ApiOperation("图文")
     @GetMapping("listByImageText")
     public R queryPostOfImageText(@RequestHeader("Authorization") String header,
                                   @RequestParam("page") int page,
-                                  @RequestParam("pageSize") int pageSize) {
+                                  @RequestParam("pageSize") int pageSize,
+                                  @RequestParam(value = "search",required = false)String search) {
         String openid = jwtUtil.getOpenidFromToken(header);
-        return postService.queryPostOfImageText(openid, page, pageSize);
+        return postService.queryPostOfImageText(openid, page, pageSize,search);
     }
 
     @ApiOperation("个人动态")
@@ -143,10 +146,10 @@ public class PostController {
     }
 
     @ApiOperation("评论帖子")
-    @PostMapping("comment/{postId}")
-    public R commentPost(@RequestHeader("Authorization") String header, @PathVariable("postId") String postId, @RequestBody Map<String, String> text) {
+    @PostMapping("comment")
+    public R commentPost(@RequestHeader("Authorization") String header, @RequestBody CommentDto commentDto) {
         String openid = jwtUtil.getOpenidFromToken(header);
-        return postService.commentPost(openid, postId, text.get("text"));
+        return postService.commentPost(openid, commentDto.getPostId(), commentDto.getText());
     }
 
     @ApiOperation("点赞评论")

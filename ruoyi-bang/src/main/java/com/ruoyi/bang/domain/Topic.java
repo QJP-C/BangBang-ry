@@ -1,5 +1,6 @@
 package com.ruoyi.bang.domain;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -27,5 +28,9 @@ public class Topic {
     //话题背景
     @ApiModelProperty("话题背景")
     private String bc;
+    //相关帖子条数
+    @ApiModelProperty("相关帖子条数")
+    @TableField(exist=false)
+    private Integer num;
 }
 

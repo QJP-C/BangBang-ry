@@ -6,7 +6,6 @@ import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ruoyi.bang.common.R;
 import com.ruoyi.bang.domain.OnlineMs;
-import com.ruoyi.bang.domain.User;
 import com.ruoyi.bang.dto.MsgDto;
 import com.ruoyi.bang.dto.RedisMsgDto;
 import com.ruoyi.bang.service.OnlineMsService;
@@ -67,8 +66,6 @@ public class OnlineMsController {
                     RedisMsgDto redisMsgDto = JSON.to(RedisMsgDto.class, dto);
                     String msg = redisMsgDto.getMsg();
                     LocalDateTime sendTime = redisMsgDto.getSendTime();
-                    User fromById = userService.getById(fromId);
-                    User toById = userService.getById(toId);
                     OnlineMs onlineMs = new OnlineMs();
                     onlineMs.setFromId(fromId);
                     onlineMs.setToId(toId);

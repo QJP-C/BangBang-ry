@@ -3,11 +3,11 @@ package com.ruoyi.bang.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.bang.common.R;
+import com.ruoyi.bang.domain.User;
+import com.ruoyi.bang.domain.UserFollow;
 import com.ruoyi.bang.dto.UserInfo;
 import com.ruoyi.bang.dto.UserMyInfo;
 import com.ruoyi.bang.dto.UserUpdate;
-import com.ruoyi.bang.domain.User;
-import com.ruoyi.bang.domain.UserFollow;
 import com.ruoyi.bang.mapper.UserMapper;
 import com.ruoyi.bang.service.PostLikeService;
 import com.ruoyi.bang.service.SendSms;
@@ -19,6 +19,7 @@ import com.ruoyi.bang.utils.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.json.JSONObject;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.ruoyi.bang.common.Constants.REDIS_LOGIN_KEY;
+import static com.ruoyi.bang.common.Constants.REDIS_USERCACHE_KEY;
 
 /**
  * (User)表服务实现类
@@ -37,6 +39,7 @@ import static com.ruoyi.bang.common.Constants.REDIS_LOGIN_KEY;
  */
 @Service
 @Slf4j
+@CacheConfig(cacheNames = REDIS_USERCACHE_KEY)
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
     @Resource
     JwtUtil jwtUtil;
@@ -172,6 +175,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @param id
      * @return
      */
+
+
     @Override
     public R<UserMyInfo> myInfo(String id) {
         User user = this.getById(id);
@@ -195,6 +200,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * @param toOpenid
      * @return
      */
+
     @Override
     public R<UserInfo> otherInfo(String id, String toOpenid) {
         boolean b = haveOne(toOpenid);

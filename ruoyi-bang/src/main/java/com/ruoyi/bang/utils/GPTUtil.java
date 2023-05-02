@@ -12,7 +12,7 @@ public class GPTUtil {
     public static String sendPost(String data) {
         RestTemplate client = new RestTemplate();
         HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("Authorization","Bearer <YourAPI>");
+        httpHeaders.add("Authorization","Bearer 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");
         httpHeaders.add("Content-Type", "application/json"); // 传递请求体时必须设置
 //        String requestJson = "{\n" +
 //                "    \"model\": \"text-davinci-003\",\n" +

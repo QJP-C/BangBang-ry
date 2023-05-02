@@ -42,8 +42,8 @@ public class TopicController {
 
     @ApiOperation("话题列表")
     @GetMapping("list")
-    public R<List<Topic>> getList(){
-        return topicService.getList();
+    public R<List<Topic>> getList(@RequestParam(value = "search",required = false)String search){
+        return topicService.getList(search);
     }
 
     @ApiOperation("关注/取关话题")

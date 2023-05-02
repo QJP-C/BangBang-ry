@@ -18,6 +18,7 @@ import com.ruoyi.common.utils.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,7 @@ import static com.ruoyi.bang.common.Constants.*;
  */
 @Slf4j
 @Service("postService")
+@CacheConfig(cacheNames = REDIS_POSTCACHE_KEY)
 public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements PostService {
 
     @Resource
@@ -66,11 +68,12 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
      *
      * @param openid
      * @param postNewParamDto
+     * @param post
      * @return
      */
     @Override
-    public R<String> savePost(String openid, PostNewParamDto postNewParamDto) {
-        Post post = new Post();
+    public R<String> savePost(String openid, PostNewParamDto postNewParamDto, Post post) {
+//        Post post = new Post();
         BeanUtils.copyProperties(postNewParamDto, post);
         post.setUserId(openid);
         post.setReleaseTime(LocalDateTime.now());
@@ -238,14 +241,20 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
 
     /**
      * 热门
+     *
      * @param openid
      * @param page
      * @param pageSize
+     * @param search
      * @return
      */
     @Override
-    public R queryPostOfRecommend(String openid, int page, int pageSize) {
-        Page<PostListResDto> resDtoList = getPostListResDtos(openid, new LambdaQueryWrapper<>(), page, pageSize);
+    public R queryPostOfRecommend(String openid, int page, int pageSize, String search) {
+        LambdaQueryWrapper<Post> qw = new LambdaQueryWrapper<>();
+        qw.like(search!=null,Post::getLocation,search);
+        qw.or();
+        qw.like(search!=null,Post::getText,search);
+        Page<PostListResDto> resDtoList = getPostListResDtos(openid,qw , page, pageSize);
         //按点赞数降序
         resDtoList.setRecords(ListUtil.sortByProperty(resDtoList.getRecords(),"likeNum"));
         resDtoList.setRecords(ListUtil.reverse(resDtoList.getRecords()));
@@ -254,15 +263,21 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
 
     /**
      * 图文
+     *
      * @param openid
      * @param page
      * @param pageSize
+     * @param search
      * @return
      */
     @Override
-    public R queryPostOfImageText(String openid, int page, int pageSize) {
+    public R queryPostOfImageText(String openid, int page, int pageSize, String search) {
         LambdaQueryWrapper<Post> qw = new LambdaQueryWrapper<>();
         qw.eq(Post::getIsVideo,0);
+        qw.like(search!=null,Post::getLocation,search);
+        qw.or();
+        qw.eq(Post::getIsVideo,0);
+        qw.like(search!=null,Post::getText,search);
         Page<PostListResDto> resDtoList = getPostListResDtos(openid,qw , page, pageSize);
         //按点赞数降序
         resDtoList.setRecords(ListUtil.sortByProperty(resDtoList.getRecords(),"likeNum"));
@@ -536,13 +551,13 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
      */
     @Override
     public R commentList(String openid, String postId, int page, int pageSize) {
-        LambdaQueryWrapper<PostCollect> qw = new LambdaQueryWrapper<>();
-        qw.eq(PostCollect::getPostId,postId).orderByDesc(PostCollect::getCollectTime);
+        LambdaQueryWrapper<PostComment> qw = new LambdaQueryWrapper<>();
+        qw.eq(PostComment::getPostId,postId).orderByDesc(PostComment::getCommentTime);
         //构造分页
         Page<PostComment> pageInfo = new Page<>(page, pageSize);
         pageInfo.setOptimizeCountSql(false);
         Page<PostCommentListDto> dtoPage = new Page<>(page, pageSize);
-        postCommentService.page(pageInfo);
+        postCommentService.page(pageInfo,qw);
         List<PostComment> list = pageInfo.getRecords();
         BeanUtils.copyProperties(pageInfo, dtoPage, "records");
         List<PostCommentListDto> resDtoList = list.stream().map(postComment -> {
@@ -602,7 +617,17 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         return stringRedisTemplate.opsForSet().size(key);
     }
 
-
+    /**
+     * 指定话题的帖子条数
+     * @param id
+     * @return
+     */
+    @Override
+    public int topicNum(String id) {
+        LambdaQueryWrapper<Post> qw = new LambdaQueryWrapper<>();
+        qw.eq(Post::getTopicId,id);
+        return this.count();
+    }
 
     @Autowired
     private PostMapper postMapper;
@@ -683,5 +708,6 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     {
         return postMapper.deletePostById(id);
     }
+
 }
 

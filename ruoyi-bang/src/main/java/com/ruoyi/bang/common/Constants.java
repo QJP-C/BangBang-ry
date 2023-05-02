@@ -11,6 +11,8 @@ public class Constants {
     public static final String REDIS_FEED_KEY= "bang:feed:";
     public static final String REDIS_LIKE_KEY= "bang:like:";
     public static final String REDIS_MSG_KEY= "bang:msg:";
+    public static final String REDIS_POSTCACHE_KEY= "bang:postCache:";
+    public static final String REDIS_USERCACHE_KEY= "bang:userCache:";
 
 
 

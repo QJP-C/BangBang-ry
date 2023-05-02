@@ -19,11 +19,13 @@ import java.util.List;
 public interface PostService extends IService<Post> {
     /**
      * 发布帖子
+     *
      * @param openid
      * @param postNewParamDto
+     * @param post
      * @return
      */
-    R<String> savePost(String openid, PostNewParamDto postNewParamDto);
+    R<String> savePost(String openid, PostNewParamDto postNewParamDto, Post post);
 
     /**
      * 帖子详情
@@ -77,18 +79,21 @@ public interface PostService extends IService<Post> {
      * @param openid
      * @param page
      * @param pageSize
+     * @param search
      * @return
      */
-    R queryPostOfRecommend(String openid, int page, int pageSize);
+    R queryPostOfRecommend(String openid, int page, int pageSize, String search);
 
     /**
      * 图文
+     *
      * @param openid
      * @param page
      * @param pageSize
+     * @param search
      * @return
      */
-    R queryPostOfImageText(String openid, int page, int pageSize);
+    R queryPostOfImageText(String openid, int page, int pageSize, String search);
 
     /**
      * 个人动态
@@ -177,5 +182,12 @@ public interface PostService extends IService<Post> {
      * @return 结果
      */
     public int deletePostById(String id);
+
+    /**
+     * 指定话题的帖子条数
+     * @param id
+     * @return
+     */
+    int topicNum(String id);
 }
 

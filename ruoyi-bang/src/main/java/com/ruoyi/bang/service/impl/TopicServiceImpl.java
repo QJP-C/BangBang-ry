@@ -8,6 +8,7 @@ import com.ruoyi.bang.domain.TopicFollow;
 import com.ruoyi.bang.domain.User;
 import com.ruoyi.bang.exception.BangException;
 import com.ruoyi.bang.mapper.TopicMapper;
+import com.ruoyi.bang.service.PostService;
 import com.ruoyi.bang.service.TopicFollowService;
 import com.ruoyi.bang.service.TopicService;
 import com.ruoyi.bang.service.UserService;
@@ -28,6 +29,8 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     private UserService userService;
     @Resource
     private TopicFollowService topicFollowService;
+    @Resource
+    private PostService postService;
 
     /**
      * 新增话题
@@ -45,10 +48,18 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
      * @return
      */
     @Override
-    public R<List<Topic>> getList() {
-        List<Topic> list = this.list();
+    public R<List<Topic>> getList(String search) {
+        LambdaQueryWrapper<Topic> qw = new LambdaQueryWrapper<>();
+        if (search!=null){
+            qw.like(Topic::getName,search);
+        }
+        List<Topic> list = this.list(qw);
         if (list == null) {
             return R.error("暂无话题");
+        }
+        for (Topic topic : list) {
+            int num =postService.topicNum(topic.getId());
+            topic.setNum(num);
         }
         return R.success(list);
     }

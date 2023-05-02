@@ -24,7 +24,7 @@ public interface TopicService extends IService<Topic> {
      * 话题列表
      * @return
      */
-    R<List<Topic>> getList();
+    R<List<Topic>> getList(String search);
 
     /**
      * 关注/取关话题
