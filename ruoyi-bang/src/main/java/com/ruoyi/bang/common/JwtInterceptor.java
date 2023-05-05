@@ -6,7 +6,6 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -26,7 +25,7 @@ public class JwtInterceptor implements HandlerInterceptor {
     @Resource
     StringRedisTemplate stringRedisTemplate;
 
-    @Autowired
+    @Resource
     JwtUtil jwtUtil;
 
     @Override

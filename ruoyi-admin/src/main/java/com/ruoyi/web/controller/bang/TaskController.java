@@ -134,5 +134,11 @@ public class TaskController extends BaseController {
         String openid = jwtUtil.getOpenidFromToken(header);
         return taskService.finishAccept(openid,taskId,fileDto.getUrls());
     }
+
+    @ApiOperation("随机任务id")
+    @GetMapping("random")
+    public R randomTask(){
+        return taskService.randomTask();
+    }
 }
 

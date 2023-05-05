@@ -204,6 +204,10 @@ public interface PostService extends IService<Post> {
      */
     R personalComment(String openid);
 
-
+    /**
+     * 随机帖子
+     * @return
+     */
+    R randomPost();
 }
 

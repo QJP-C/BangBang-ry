@@ -18,7 +18,11 @@ ruoyi:
 # 开发环境配置
 server:
   # 服务器的HTTP端口，默认为8080
-  port: 2001
+  port: 443
+  ssl:
+    keyStore: classpath:9906369_www.qjpqjp.top.pfx
+    keyStorePassword: 0n8sz118
+    keyStoreType: PKCS12
   servlet:
     # 应用的访问路径
     context-path: /
@@ -242,3 +246,4 @@ xss:
   excludes: /system/notice
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
+

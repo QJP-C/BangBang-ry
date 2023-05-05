@@ -10,6 +10,11 @@ import com.ruoyi.bang.domain.TopicFollow;
  * @since 2023-04-20 21:27:43
  */
 public interface TopicFollowService extends IService<TopicFollow> {
-
+    /**
+     * 加入该话题的人数
+     * @param id
+     * @return
+     */
+    int joinNum(String topicId);
 }
 

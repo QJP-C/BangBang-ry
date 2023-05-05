@@ -62,6 +62,9 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
             topic.setNum(num);
             boolean isJoin = topicIsFollow(openid,topic.getId());
             topic.setJoin(isJoin);
+            //加入该话题的人数
+            int joinNum = topicFollowService.joinNum(topic.getId());
+            topic.setJoinNum(joinNum);
         }
         return R.success(list);
     }

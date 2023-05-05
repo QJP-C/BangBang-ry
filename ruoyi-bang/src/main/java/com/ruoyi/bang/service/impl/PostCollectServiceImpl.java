@@ -29,7 +29,7 @@ public class PostCollectServiceImpl extends ServiceImpl<PostCollectMapper, PostC
     public boolean isCollect(String openid, String postId) {
         LambdaQueryWrapper<PostCollect> qw = new LambdaQueryWrapper<>();
         qw.eq(PostCollect::getPostId,postId).eq(PostCollect::getUserId,openid);
-        return this.count()>0;
+        return this.count(qw)>0;
     }
 
     /**
@@ -69,7 +69,7 @@ public class PostCollectServiceImpl extends ServiceImpl<PostCollectMapper, PostC
     public List<String> myCollects(String openid) {
         LambdaQueryWrapper<PostCollect> qw = new LambdaQueryWrapper<>();
         qw.eq(PostCollect::getUserId,openid).orderByDesc(PostCollect::getCollectTime);
-        List<PostCollect> list = this.list();
+        List<PostCollect> list = this.list(qw);
         List<String> ids = new ArrayList<>(list.size());
         for (PostCollect collect : list) {
             ids.add(collect.getPostId());

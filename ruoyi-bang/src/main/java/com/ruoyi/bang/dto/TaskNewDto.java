@@ -38,5 +38,5 @@ public class TaskNewDto {
     private LocalDateTime limitTime;
     //附件
     @ApiModelProperty(value = "附件url数组")
-    private String[] urls;
+    private String urls;
 }

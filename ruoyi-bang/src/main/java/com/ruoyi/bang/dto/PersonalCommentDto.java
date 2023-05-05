@@ -27,5 +27,6 @@ public class PersonalCommentDto {
     private String postId;
     @ApiModelProperty("帖子文本")
     private String postText;
-
+    @ApiModelProperty("附件类型 0无附件 1图片 2视频")
+    private Integer fileType;
 }

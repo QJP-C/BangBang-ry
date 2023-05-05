@@ -190,7 +190,7 @@ public class OnlineMsController {
                     msgList.add(msg);
                 } else {
                     MsgDto msg = new MsgDto();
-                    Map<String, String> oneInfo = userService.getOneInfo(onlineMs.getToId());
+                    Map<String, String> oneInfo = userService.getOneInfo(onlineMs.getFromId());
                     msg.setHead(oneInfo.get("head"));
                     msg.setName(oneInfo.get("username"));
                     msg.setId(onlineMs.getFromId());

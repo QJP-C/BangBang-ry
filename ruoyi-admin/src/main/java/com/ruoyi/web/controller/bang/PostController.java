@@ -68,7 +68,7 @@ public class PostController {
     @ApiOperation("按话题查(热门)")
     @GetMapping("listByHot")
     public R<Page<PostListResDto>> pageByHotTopic(@RequestHeader("Authorization") String header,
-                                                  @PathVariable(value = "topicId", required = false) String topicId,
+                                                  @RequestParam(value = "topicId", required = false) String topicId,
                                                   @RequestParam("page") int page,
                                                   @RequestParam("pageSize") int pageSize) {
         String openid = jwtUtil.getOpenidFromToken(header);
@@ -78,7 +78,7 @@ public class PostController {
     @ApiOperation("按话题查(新帖)")
     @GetMapping("listByNew")
     public R<Page<PostListResDto>> pageByNewTopic(@RequestHeader("Authorization") String header,
-                                                  @PathVariable(value = "topicId", required = false) String topicId,
+                                                  @RequestParam(value = "topicId", required = false) String topicId,
                                                   @RequestParam("page") int page,
                                                   @RequestParam("pageSize") int pageSize) {
         String openid = jwtUtil.getOpenidFromToken(header);
@@ -191,5 +191,9 @@ public class PostController {
         return postService.commentList(openid, postId, page, pageSize);
     }
 
-
+    @ApiOperation("随机帖子id")
+    @GetMapping("random")
+    public R randomPost(){
+        return postService.randomPost();
+    }
 }

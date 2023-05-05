@@ -9,6 +9,7 @@ import java.util.List;
 @Data
 public class PersonalTopicDto {
     private List<Topic> res;
-    @ApiModelProperty("关注数")
+    @ApiModelProperty("关注话题数")
     private Integer followNum;
+
 }

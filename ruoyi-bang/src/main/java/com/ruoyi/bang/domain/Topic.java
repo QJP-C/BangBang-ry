@@ -35,5 +35,8 @@ public class Topic {
     @ApiModelProperty("是否加入")
     @TableField(exist=false)
     private boolean isJoin;
+    @ApiModelProperty("相关圈友")
+    @TableField(exist=false)
+    private Integer joinNum;
 }
 

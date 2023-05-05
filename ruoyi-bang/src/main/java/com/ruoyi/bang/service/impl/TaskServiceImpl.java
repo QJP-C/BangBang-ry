@@ -2,6 +2,7 @@ package com.ruoyi.bang.service.impl;
 
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.date.LocalDateTimeUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -30,6 +31,7 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -76,23 +78,24 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         Date time = DateUtil.parse(s);
         Task task = new Task();
         BeanUtils.copyProperties(taskNewDto, task);
+        String limitTimeStr = DateUtil.formatLocalDateTime(taskNewDto.getLimitTime());
+        Date limitTimed = DateUtil.parse(limitTimeStr);
+        task.setLimitTime(limitTimed);
         task.setFromId(openid);
         task.setReleaseTime(time);
-        task.setState(0);//已发布  TODO 未提交审核
-        int insert = taskMapper.insert(task);
-        if (insert == 0) {
+        task.setState(0);//已发布
+        boolean insert = this.save(task);
+        if (!insert) {
             BangException.cast("发布失败!");
         }
         String taskId = task.getId();
-        String[] urls = taskNewDto.getUrls();
-        for (String url : urls) {
-            File file = new File();
-            file.setAboutId(taskId);
-            file.setBelong(1);//1发布任务附件
-            file.setUrl(url);
-            file.setCreateTime(now);
-            fileService.save(file);
-        }
+        String url = taskNewDto.getUrls();
+        File file = new File();
+        file.setAboutId(taskId);
+        file.setBelong(1);//1发布任务附件
+        file.setUrl(url);
+        file.setCreateTime(now);
+        fileService.save(file);
         if (taskNewDto.getLimitTime() != null) {
             boolean flag = countdown(taskNewDto.getLimitTime(), taskId);
             if (!flag) {
@@ -160,14 +163,12 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
     @Override
     public R<Page<TaskListResDto>> taskList(String openid, String typeId, String search, int page, int pageSize) {
         LambdaQueryWrapper<Task> qw = new LambdaQueryWrapper<>();
-        qw
-                .eq(!StringUtil.isNullOrEmpty(typeId), Task::getTypeId, typeId).like(!StringUtil.isNullOrEmpty(search), Task::getLocation, search)
+        qw.like(!StringUtil.isNullOrEmpty(search), Task::getLocation, search)
                 .or()
-                .eq(!StringUtil.isNullOrEmpty(typeId), Task::getTypeId, typeId).like(!StringUtil.isNullOrEmpty(search), Task::getDetails, search)
+                .like(!StringUtil.isNullOrEmpty(search), Task::getDetails, search)
                 .or()
-                .eq(!StringUtil.isNullOrEmpty(typeId), Task::getTypeId, typeId).like(!StringUtil.isNullOrEmpty(search), Task::getTitle, search);
-        qw.eq(Task::getState, 1);
-        qw.orderByDesc(Task::getReleaseTime);
+                .like(!StringUtil.isNullOrEmpty(search), Task::getTitle, search);
+        qw.eq(!StringUtil.isNullOrEmpty(typeId), Task::getTypeId, typeId).eq(Task::getState, 1).orderByDesc(Task::getReleaseTime);
         return R.success(getListR(openid, qw, page, pageSize));
     }
 
@@ -347,6 +348,18 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
     }
 
     /**
+     * 随机任务id
+     * @return
+     */
+    @Override
+    public R randomTask() {
+        LambdaQueryWrapper<Task> qw = new LambdaQueryWrapper<>();
+        qw.eq(Task::getState,1);
+        List<Task> taskList = this.list(qw);
+        Task task = taskList.get(new Random().nextInt(taskList.size()));
+        return R.success(task.getId());
+    }
+    /**
      * 获取任务相关信息
      *
      * @param openid
@@ -364,6 +377,10 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         //是否收藏
         int like = isLike(openid, task.getId());
         dto.setIsCollect(like);
+        //截止时间
+        String limitTimeStr = DateUtil.format(task.getLimitTime(), "yyyy-MM-dd HH:mm:ss");
+        LocalDateTime limitTimed = LocalDateTimeUtil.parse(limitTimeStr, "yyyy-MM-dd HH:mm:ss");
+        dto.setLimitTime(limitTimed);
         //类型信息
         String typeId = task.getTypeId();
         if (StringUtil.isNullOrEmpty(typeId)) BangException.cast("请选择类型");
@@ -430,7 +447,7 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         //计算时间差
         Duration between = Duration.between(LocalDateTime.now(), limitTime);
         long i = (int) between.toMillis();
-        if (i <= 0) {
+        if (i <= 0L) {
             return false;
         }
         stringRedisTemplate.opsForValue().set(REDIS_COUNTDOWN_KEY + taskId, "任务逾期缓存", i, TimeUnit.MILLISECONDS);
@@ -445,8 +462,7 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
      * @return 任务审核
      */
     @Override
-    public Task selectTaskById(String id)
-    {
+    public Task selectTaskById(String id) {
         return taskMapper.selectTaskById(id);
     }
 
@@ -457,23 +473,22 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
      * @return 任务审核
      */
     @Override
-    public List<Task> selectTaskList(Task task)
-    {
+    public List<Task> selectTaskList(Task task) {
 //        return taskMapper.selectTaskList(task);
         LambdaQueryWrapper<Task> qw = new LambdaQueryWrapper<>();
-        qw.like(task.getDetails()!=null,Task::getDetails,task.getDetails())
-        .like(task.getTitle()!=null,Task::getTitle,task.getTitle())
-        .eq(task.getState()!=null,Task::getState,task.getState())
-        .eq(task.getUrgent()!=null,Task::getUrgent,task.getUrgent())
-        .like(task.getLocation()!=null,Task::getLocation,task.getLocation())
-        .like(task.getReleaseTime()!=null,Task::getReleaseTime,task.getUrgent())
-        .like(task.getLimitTime()!=null,Task::getLimitTime,task.getReleaseTime());
+        qw.like(task.getDetails() != null, Task::getDetails, task.getDetails())
+                .like(task.getTitle() != null, Task::getTitle, task.getTitle())
+                .eq(task.getState() != null, Task::getState, task.getState())
+                .eq(task.getUrgent() != null, Task::getUrgent, task.getUrgent())
+                .like(task.getLocation() != null, Task::getLocation, task.getLocation())
+                .like(task.getReleaseTime() != null, Task::getReleaseTime, task.getUrgent())
+                .like(task.getLimitTime() != null, Task::getLimitTime, task.getReleaseTime());
         List<Task> taskList = this.list(qw);
         List<Task> collect = taskList.stream().map(task1 -> {
             task1.setFromUrls(fileService.getTaskFiles(task1.getId()));
             return task1;
         }).collect(Collectors.toList());
-        ListUtil.sortByProperty(collect,"releaseTime");
+        ListUtil.sortByProperty(collect, "releaseTime");
         ListUtil.reverse(collect);
         return collect;
     }
@@ -485,8 +500,7 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
      * @return 结果
      */
     @Override
-    public int insertTask(Task task)
-    {
+    public int insertTask(Task task) {
         task.setCreateTime(DateUtils.getNowDate());
         return taskMapper.insertTask(task);
     }
@@ -498,8 +512,7 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
      * @return 结果
      */
     @Override
-    public int updateTask(Task task)
-    {
+    public int updateTask(Task task) {
         task.setUpdateTime((DateUtils.getNowDate()));
         return taskMapper.updateTask(task);
     }
@@ -511,8 +524,7 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
      * @return 结果
      */
     @Override
-    public int deleteTaskByIds(String[] ids)
-    {
+    public int deleteTaskByIds(String[] ids) {
         return taskMapper.deleteTaskByIds(ids);
     }
 
@@ -523,9 +535,9 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
      * @return 结果
      */
     @Override
-    public int deleteTaskById(String id)
-    {
+    public int deleteTaskById(String id) {
         return taskMapper.deleteTaskById(id);
     }
+
 }
 

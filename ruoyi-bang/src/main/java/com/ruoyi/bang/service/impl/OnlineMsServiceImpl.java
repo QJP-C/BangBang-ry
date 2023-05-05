@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyi.bang.domain.OnlineMs;
 import com.ruoyi.bang.domain.User;
 import com.ruoyi.bang.dto.RedisMsgDto;
+import com.ruoyi.bang.exception.BangException;
 import com.ruoyi.bang.mapper.OnlineMsMapper;
 import com.ruoyi.bang.service.OnlineMsService;
 import com.ruoyi.bang.service.UserService;
@@ -35,20 +36,11 @@ public class OnlineMsServiceImpl extends ServiceImpl<OnlineMsMapper, OnlineMs> i
 
     @Override
     public void message(String from, String to, String message) {
-        Boolean aBoolean = redisTemplate.opsForHash().hasKey(REDIS_MSG_KEY + from, to);
-        if (aBoolean){
-            RedisMsgDto redisMsgDto = new RedisMsgDto();
-            redisMsgDto.setMsg(message);
-            redisMsgDto.setSendTime(LocalDateTime.now());
-            redisTemplate.opsForHash().put(REDIS_MSG_KEY+from,to, JSON.toJSONString(redisMsgDto));
-        }else {
-            RedisMsgDto redisMsgDto = new RedisMsgDto();
-            redisMsgDto.setMsg(message);
-            redisMsgDto.setSendTime(LocalDateTime.now());
-            stringRedisTemplate.opsForHash().put(REDIS_MSG_KEY+from,to,JSON.toJSONString(redisMsgDto));
-        }
-
-    }
+        RedisMsgDto redisMsgDto = new RedisMsgDto();
+        redisMsgDto.setMsg(message);
+        redisMsgDto.setSendTime(LocalDateTime.now());
+        stringRedisTemplate.opsForHash().put(REDIS_MSG_KEY+from,to, JSON.toJSONString(redisMsgDto));
+}
 
     @Override
     public String offline(String from, String to, String message) {
@@ -60,12 +52,14 @@ public class OnlineMsServiceImpl extends ServiceImpl<OnlineMsMapper, OnlineMs> i
             onlineMs.setFromId(from);
             onlineMs.setSendTime(LocalDateTime.now());
             onlineMs.setIsRead(0);
-            this.save(onlineMs);
+            boolean save = this.save(onlineMs);
+            if (!save){
+                BangException.cast("消息存储失败！");
+            }
             log.info("离线消息已存储");
             return "离线消息已存储";
         }
         return "该用户不存在！";
-
     }
     @Override
     public void fa(String id,String msg){

@@ -61,7 +61,7 @@ public interface UserService extends IService<User> {
      * @param toOpenid
      * @return
      */
-    R<UserInfo> otherInfo(String id, String toOpenid);
+    R<UserInfo> otherInfo(String myOpenid, String toOpenid);
 
     /**
      * 获取用户资料

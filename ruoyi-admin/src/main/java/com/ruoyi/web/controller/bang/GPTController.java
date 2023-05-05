@@ -2,12 +2,11 @@ package com.ruoyi.web.controller.bang;
 
 import com.ruoyi.bang.common.R;
 import com.ruoyi.bang.utils.GPTUtil;
-import io.swagger.annotations.Api;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@Api(tags = "GPT接口", value = "GPT接口")
+//@Api(tags = "GPT接口", value = "GPT接口")
 @RestController
 @CrossOrigin
 @RequestMapping("bang/gpt")

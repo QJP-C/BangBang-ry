@@ -101,6 +101,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 user.setSex(0);
                 String substring = openid.substring(0, 8);
                 user.setUsername("帮帮用户" + substring);
+                user.setHead("http://qjpqjp.top:9000/bang/photo/default.png");
                 user.setSignature("这个用户懒且不够个性，暂时没有个性签名");
                 boolean rs = this.save(user);
                 if (!rs) {
@@ -196,36 +197,36 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 他人信息
-     * @param id
+     * @param myOpenid
      * @param toOpenid
      * @return
      */
 
     @Override
-    public R<UserInfo> otherInfo(String id, String toOpenid) {
+    public R<UserInfo> otherInfo(String myOpenid, String toOpenid) {
         boolean b = haveOne(toOpenid);
         if (!b){
             return R.error("不存在该用户");
         }
-        User user = this.getById(id);
+        User user = this.getById(toOpenid);
         UserInfo userInfo = new UserInfo();
         BeanUtils.copyProperties(user,userInfo);
         LambdaQueryWrapper<UserFollow> qw = new LambdaQueryWrapper<>();
         qw.eq(UserFollow::getFollowId,toOpenid);
-        qw.eq(UserFollow::getUserId,id);
+        qw.eq(UserFollow::getUserId,myOpenid);
         //用户是否关注他
         int count = userFollowService.count(qw);
         if (count>0){
             userInfo.setIsFollow(true);
         }
         //获取粉丝数
-        Long fansNum = userFollowService.userFansNum(id);
+        Long fansNum = userFollowService.userFansNum(toOpenid);
         userInfo.setFans(fansNum);
         //获取被赞数
-        Long likeNum = postLikeService.getUserLikeNum(id);
+        Long likeNum = postLikeService.getUserLikeNum(toOpenid);
         userInfo.setNice(likeNum);
         //获取关注数
-        Long followNum = userFollowService.userFollowNum(id);
+        Long followNum = userFollowService.userFollowNum(toOpenid);
         userInfo.setFollow(followNum);
         return R.success(userInfo);
     }

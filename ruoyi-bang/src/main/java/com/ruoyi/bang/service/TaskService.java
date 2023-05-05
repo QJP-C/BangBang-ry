@@ -145,5 +145,7 @@ public interface TaskService extends IService<Task> {
      * @return 结果
      */
     public int deleteTaskById(String id);
+
+    R randomTask();
 }
 

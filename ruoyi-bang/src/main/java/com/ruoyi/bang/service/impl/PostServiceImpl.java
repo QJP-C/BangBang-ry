@@ -23,10 +23,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.ruoyi.bang.common.Constants.*;
@@ -297,6 +294,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     public R queryPostOfFollow(String openid, Long max, Integer offset, Integer pageSize) {
         //1.获取当前用户
         //2.查询收件箱
+
         String key = REDIS_FEED_KEY + openid;
         Set<ZSetOperations.TypedTuple<String>> typedTuples = stringRedisTemplate.opsForZSet()
                 .reverseRangeByScoreWithScores(key, 0, max, offset, pageSize);
@@ -354,15 +352,16 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
             postListResDto.setCollect(collect);
             return postListResDto;
         }).collect(Collectors.toList());
-
+        Page<PostListResDto> pageInfo = new Page<>(1, Integer.valueOf(String.valueOf(stringRedisTemplate.opsForZSet().zCard(key))));
+        pageInfo.setRecords(resDtoList);
         //5.封装并返回
-        FollowListResDto dto = new FollowListResDto();
-        dto.setSize(resDtoList.size());
-        dto.setTotal(Integer.valueOf(String.valueOf(stringRedisTemplate.opsForZSet().zCard(key))));
-        dto.setList(resDtoList);
-        dto.setOffset(os);
-        dto.setMinTime(minTime);
-        return R.success(dto);
+//        FollowListResDto dto = new FollowListResDto();
+//        dto.setSize(resDtoList.size());
+//        dto.setTotal(Integer.valueOf(String.valueOf(stringRedisTemplate.opsForZSet().zCard(key))));
+//        dto.setList(resDtoList);
+//        dto.setOffset(os);
+//        dto.setMinTime(minTime);
+        return R.success(pageInfo);
     }
 
     /**
@@ -481,14 +480,29 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         if (count<=0) return R.success("这个人还没有评论过别人！");
         List<PostComment> list = postCommentService.list(qw);
         List<PersonalCommentDto> dtos = list.stream().map(postComment -> {
+            PersonalCommentDto dto = new PersonalCommentDto();
             String postId = postComment.getPostId();
             //帖子对象信息
             Post post = this.getById(postId);
+            int isVideo = post.getIsVideo();
+            if (isVideo == 0){//非视频
+                LambdaQueryWrapper<File> qww = new LambdaQueryWrapper<>();
+                qww.eq(File::getAboutId,postId).eq(File::getBelong,3);
+                int count1 = fileService.count(qww);
+                if (count1<=0) {//无附件
+                    dto.setFileType(0);
+                }else {//图片
+                    dto.setFileType(1);
+                }
+            }else {
+                dto.setFileType(2);
+            }
+
             //发评论对象信息
             Map<String, String> oneInfo = userService.getOneInfo(openid);
             //发帖对象信息
             Map<String, String> info = userService.getOneInfo(post.getUserId());
-            PersonalCommentDto dto = new PersonalCommentDto();
+
             dto.setUserId(openid);
             dto.setHead(oneInfo.get("head"));
             dto.setUsername(oneInfo.get("username"));
@@ -501,6 +515,17 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
             return dto;
         }).collect(Collectors.toList());
         return R.success(dtos);
+    }
+
+    /**
+     * 随机帖子
+     * @return
+     */
+    @Override
+    public R randomPost() {
+        List<Post> list = this.list();
+        Post post = list.get(new Random().nextInt(list.size()));
+        return R.success(post.getId());
     }
 
     /**
@@ -681,7 +706,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     public int topicNum(String id) {
         LambdaQueryWrapper<Post> qw = new LambdaQueryWrapper<>();
         qw.eq(Post::getTopicId,id);
-        return this.count();
+        return this.count(qw);
     }
 
 
