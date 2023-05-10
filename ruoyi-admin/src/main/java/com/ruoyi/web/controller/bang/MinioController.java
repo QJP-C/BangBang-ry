@@ -5,7 +5,6 @@ import com.ruoyi.bang.utils.MinioUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,13 +27,13 @@ import java.util.Map;
 @CrossOrigin
 @RestController
 public class MinioController {
-    @Autowired
+    @Resource
     private MinioUtils minioUtils;
     @Value("${minio.bucketName}")
     private String bucketName;
     //    @Value("${minio.endpoint}")
     //    private String address;
-    private final String address = "http://qjpqjp.top:9000";
+    private final String address = "http://114.116.95.152:9000";
     /**
      * 上传
      * @param file

@@ -43,7 +43,7 @@ public class TaskController extends BaseController {
     @Resource
     JwtUtil jwtUtil;
 
-    @ApiOperation("新增任务")
+    @ApiOperation("任务发布")
     @PostMapping("new")
     public R<String> newTask(@RequestHeader("Authorization") String header, @NotBlank @RequestBody TaskNewDto taskNewDto) {
         String openid = jwtUtil.getOpenidFromToken(header);

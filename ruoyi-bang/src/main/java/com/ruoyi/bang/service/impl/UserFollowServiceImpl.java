@@ -168,7 +168,7 @@ public class UserFollowServiceImpl extends ServiceImpl<UserFollowMapper, UserFol
         List<UserFollow> list = this.list(qw);
         List<String> ids = new ArrayList<>(list.size());
         for (UserFollow follow : list) {
-            ids.add(follow.getFollowId());
+            ids.add(follow.getUserId());
         }
         List<User> users = userService.listByIds(ids);
         List<UserListDto> resDto = users.stream().map(user -> {
@@ -187,7 +187,6 @@ public class UserFollowServiceImpl extends ServiceImpl<UserFollowMapper, UserFol
             }
             return userListDto;
         }).collect(Collectors.toList());
-
         return R.success(resDto);
     }
 }

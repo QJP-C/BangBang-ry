@@ -48,7 +48,7 @@ public class UserController {
     @PutMapping("updateInfo")
     public R updateInfo(@RequestBody UserUpdate userUpdate, @RequestHeader("Authorization") String header) {
         String openid = jwtUtil.getOpenidFromToken(header);
-        return !openid.isEmpty() ? userService.updateInfo(userUpdate, openid) : R.error("修改失败");
+        return userService.updateInfo(userUpdate, openid);
     }
 
     @ApiOperation("发送短信验证码")

@@ -209,6 +209,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         //按点赞数降序
         resDtoList.setRecords(ListUtil.sortByProperty(resDtoList.getRecords(),"likeNum"));
         resDtoList.setRecords(ListUtil.reverse(resDtoList.getRecords()));
+        resDtoList.setRecords(ListUtil.sortByProperty(resDtoList.getRecords(),"releaseTime"));
+        resDtoList.setRecords(ListUtil.reverse(resDtoList.getRecords()));
         return R.success(resDtoList);
     }
 

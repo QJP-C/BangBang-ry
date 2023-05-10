@@ -72,7 +72,6 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
     @Override
     @Transactional
     public R<String> newTask(String openid, TaskNewDto taskNewDto) {
-
         LocalDateTime now = LocalDateTime.now();
         String s = DateUtil.formatLocalDateTime(now);
         Date time = DateUtil.parse(s);
