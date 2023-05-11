@@ -197,7 +197,7 @@ public class OnlineMsController {
             Map<String, String> oneInfo = userService.getOneInfo(userId);
             msgDto.setHead(oneInfo.get("head"));
             msgDto.setName(oneInfo.get("username"));
-            msgDto.setId(onlineMs.getFromId());
+            msgDto.setId(userId);
             msgList.add(msgDto);
         }
         for (MsgDto msgDto : msgList) {

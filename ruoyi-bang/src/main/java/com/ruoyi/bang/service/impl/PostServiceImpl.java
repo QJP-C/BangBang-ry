@@ -238,7 +238,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     }
 
     /**
-     * 热门
+     * 推荐
      *
      * @param openid
      * @param page
@@ -252,6 +252,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         qw.like(search!=null,Post::getLocation,search);
         qw.or();
         qw.like(search!=null,Post::getText,search);
+        qw.orderByDesc(Post::getReleaseTime);
         Page<PostListResDto> resDtoList = getPostListResDtos(openid,qw , page, pageSize);
         //按点赞数降序
         resDtoList.setRecords(ListUtil.sortByProperty(resDtoList.getRecords(),"likeNum"));
@@ -271,12 +272,11 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     @Override
     public R queryPostOfImageText(String openid, int page, int pageSize, String search) {
         LambdaQueryWrapper<Post> qw = new LambdaQueryWrapper<>();
-        qw.eq(Post::getIsVideo,0);
-        qw.like(search!=null,Post::getLocation,search);
-        qw.or();
-        qw.eq(Post::getIsVideo,0);
+        qw.eq(Post::getIsVideo,0).orderByDesc(Post::getReleaseTime);
+        qw.like(search!=null,Post::getLocation,search)
+                .or();
         qw.like(search!=null,Post::getText,search);
-        Page<PostListResDto> resDtoList = getPostListResDtos(openid,qw , page, pageSize);
+        Page<PostListResDto> resDtoList = getPostListResDtos(openid,qw,page,pageSize);
         //按点赞数降序
         resDtoList.setRecords(ListUtil.sortByProperty(resDtoList.getRecords(),"likeNum"));
         resDtoList.setRecords(ListUtil.reverse(resDtoList.getRecords()));
