@@ -1,6 +1,7 @@
 package com.ruoyi.web;
 
 
+import cn.hutool.core.collection.ListUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.json.JSONObject;
@@ -14,15 +15,19 @@ import com.aliyuncs.profile.DefaultProfile;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.gson.Gson;
+import com.ruoyi.bang.domain.OnlineMs;
 import com.ruoyi.bang.domain.Post;
 import com.ruoyi.bang.domain.Task;
 import com.ruoyi.bang.domain.User;
+import com.ruoyi.bang.dto.MsgDto;
 import com.ruoyi.bang.dto.PostNewParamDto;
 import com.ruoyi.bang.dto.RedisMsgDto;
 import com.ruoyi.bang.dto.TaskListResDto;
 import com.ruoyi.bang.mapper.TaskMapper;
+import com.ruoyi.bang.service.OnlineMsService;
 import com.ruoyi.bang.service.PostService;
 import com.ruoyi.bang.service.TaskService;
+import com.ruoyi.bang.service.UserService;
 import io.netty.util.internal.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -56,6 +61,10 @@ public class PssTest {
     private RedisTemplate redisTemplate;
     @Resource
     private PostService postService;
+    @Resource
+    private OnlineMsService onlineMsService;
+    @Resource
+    private UserService userService;
     @Test
     public void testMapper() {
         String s = "1651029218248720386";
@@ -83,6 +92,71 @@ public class PssTest {
 //        IPage<LendList> lendListIPage = lendRecordMapper.getLendList(page, wrapper);
         taskService.page(pageInfo, qw);
         System.out.println(pageInfo.getRecords());
+    }
+
+    @Test
+    void testXXX(){
+        // 按消息与每个人的最后一条查
+        LambdaQueryWrapper<OnlineMs> wrap = new LambdaQueryWrapper<>();
+        String openid = "oI1vd5BUGnDzqKfkJbprGklQnIDk";
+        wrap.groupBy(OnlineMs::getFromId).groupBy(OnlineMs::getToId).select(OnlineMs::getFromId, OnlineMs::getSendTime, OnlineMs::getIsRead,
+                OnlineMs::getLastContext, OnlineMs::getToId, OnlineMs::getId);
+        wrap.eq(OnlineMs::getFromId, openid)
+                .or()
+                .eq(OnlineMs::getToId, openid);
+        List<OnlineMs> list = onlineMsService.list(wrap);
+        ListUtil.sortByProperty(list,"sendTime");
+        ListUtil.reverse(list);
+        list.forEach(System.out::println);
+        HashMap<String, OnlineMs> map = new HashMap<>();
+        for (OnlineMs onlineMs : list) {
+            if (Objects.equals(onlineMs.getFromId(),openid)){
+                map.put(onlineMs.getToId(),onlineMs);
+            }else if (Objects.equals(onlineMs.getToId(),openid)){
+                map.put(onlineMs.getFromId(),onlineMs);
+            }
+        }
+        Set<String> userIds = map.keySet();
+        userIds.forEach(key->{
+            System.out.println(key);
+            System.out.println(map.get(key));
+        });
+        System.out.println("================");
+        List<MsgDto> msgList = new ArrayList<>();
+        for (String userId : userIds) {
+            LambdaQueryWrapper<OnlineMs> qw = new LambdaQueryWrapper<>();
+            qw.eq(OnlineMs::getFromId,userId).or().eq(OnlineMs::getToId,userId).orderByDesc(OnlineMs::getSendTime).last("limit 1");
+            OnlineMs one = onlineMsService.getOne(qw);
+            MsgDto msgDto = new MsgDto();
+            msgDto.setLastMsg(one.getLastContext());
+            msgDto.setSendTime(one.getSendTime());
+            Map<String, String> oneInfo = userService.getOneInfo(one.getFromId());
+            msgDto.setHead(oneInfo.get("head"));
+            msgDto.setName(oneInfo.get("username"));
+            msgDto.setId(one.getFromId());
+            msgList.add(msgDto);
+        }
+        for (MsgDto msgDto : msgList) {
+            LambdaQueryWrapper<OnlineMs> wrap1 = new LambdaQueryWrapper<>();
+            wrap1.eq(OnlineMs::getFromId, openid)
+                    .eq(OnlineMs::getToId, msgDto.getId())
+                    .or()
+                    .eq(OnlineMs::getToId, openid)
+                    .eq(OnlineMs::getFromId, msgDto.getId())
+                    .orderByDesc(OnlineMs::getSendTime).last("limit 1");
+            OnlineMs one = onlineMsService.getOne(wrap1);
+            msgDto.setSendTime(one.getSendTime());
+            msgDto.setLastMsg(one.getLastContext());
+
+            //未读消息
+            LambdaQueryWrapper<OnlineMs> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(OnlineMs::getToId, openid)
+                    .eq(OnlineMs::getFromId, msgDto.getId())
+                    .eq(OnlineMs::getIsRead, 0);
+            int count = onlineMsService.count(wrapper);
+            msgDto.setUnread(count);
+        }
+        msgList.forEach(System.out::println);
     }
 
     @Test
