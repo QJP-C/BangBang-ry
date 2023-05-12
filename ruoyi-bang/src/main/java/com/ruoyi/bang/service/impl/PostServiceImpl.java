@@ -322,11 +322,11 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
             }
         }
         //5.根据postId查
-//        String ids = StrUtil.join(",", postIds);
-//        List<Post> posts = query().in("id",ids).last("ORDER BY FILED(id,"+ids+")").list();
         List<Post> posts = listByIds(postIds);
+        //按发布时间倒叙
         ListUtil.sortByProperty(posts, "releaseTime");
         ListUtil.reverse(posts);
+        //封装返回模型
         List<PostListResDto> resDtoList = posts.stream().map(post -> {
             String postId = post.getId();
             PostListResDto postListResDto = new PostListResDto();
@@ -356,13 +356,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         }).collect(Collectors.toList());
         Page<PostListResDto> pageInfo = new Page<>(1, Integer.valueOf(String.valueOf(stringRedisTemplate.opsForZSet().zCard(key))));
         pageInfo.setRecords(resDtoList);
-        //5.封装并返回
-//        FollowListResDto dto = new FollowListResDto();
-//        dto.setSize(resDtoList.size());
-//        dto.setTotal(Integer.valueOf(String.valueOf(stringRedisTemplate.opsForZSet().zCard(key))));
-//        dto.setList(resDtoList);
-//        dto.setOffset(os);
-//        dto.setMinTime(minTime);
+
         return R.success(pageInfo);
     }
 

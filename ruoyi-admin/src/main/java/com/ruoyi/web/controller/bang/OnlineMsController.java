@@ -15,7 +15,6 @@ import com.ruoyi.bang.utils.JwtUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -39,13 +38,13 @@ import static com.ruoyi.bang.common.Constants.REDIS_MSG_KEY;
 @RequestMapping("bang/lt")
 @Api(tags = "聊天相关接口",value = "聊天相关接口")
 public class OnlineMsController {
-    @Autowired
+    @Resource
     private UserService userService;
-    @Autowired
+    @Resource
     private OnlineMsService onlineMsService;
-    @Autowired
+    @Resource
     private StringRedisTemplate stringRedisTemplate;
-    @Autowired
+    @Resource
     private MessageController messageController;
     @Resource
     JwtUtil jwtUtil;
