@@ -81,6 +81,29 @@ public class OnlineMsController {
         log.info("==================转存结束===================");
     }
 
+    /**同步某人的聊天记录
+     *
+     *
+     * @param fromId
+     * @param toId
+     */
+    public void recordTb(String fromId,String toId) {
+        String key = REDIS_MSG_KEY + fromId;
+        log.info("=========开始将{}与{}的聊天记录转存到Mysql==========",fromId,toId);
+        Object o = stringRedisTemplate.opsForHash().get(key, toId);//获取REDIS_MSG_KEY开头的所有key
+        RedisMsgDto redisMsgDto = JSON.to(RedisMsgDto.class, o);
+        String msg = redisMsgDto.getMsg();
+        LocalDateTime sendTime = redisMsgDto.getSendTime();
+        OnlineMs onlineMs = new OnlineMs();
+        onlineMs.setFromId(fromId);
+        onlineMs.setToId(toId);
+        onlineMs.setSendTime(sendTime);
+        onlineMs.setLastContext(msg);
+        onlineMs.setIsRead(0);
+        onlineMsService.save(onlineMs);
+        stringRedisTemplate.delete(key);
+    }
+
     /**
      * 查询与某人聊天记录
      *
@@ -172,10 +195,11 @@ public class OnlineMsController {
         wrap.eq(OnlineMs::getFromId, openid)
                 .or()
                 .eq(OnlineMs::getToId, openid);
+        wrap.orderByDesc(OnlineMs::getSendTime);
         List<OnlineMs> list = onlineMsService.list(wrap);
-        //按时间升序排序
-        ListUtil.sortByProperty(list,"sendTime");
-        ListUtil.reverse(list);
+//        //按时间升序排序
+//        ListUtil.sortByProperty(list,"sendTime");
+//        ListUtil.reverse(list);
         //key为用户id,value为消息对象  最终留最后一条消息
         HashMap<String, OnlineMs> map = new HashMap<>();
         for (OnlineMs onlineMs : list) {
@@ -189,7 +213,12 @@ public class OnlineMsController {
         Set<String> userIds = map.keySet();
         List<MsgDto> msgList = new ArrayList<>();
         for (String userId : userIds) {
-            OnlineMs onlineMs = map.get(userId);
+            LambdaQueryWrapper<OnlineMs> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(OnlineMs::getFromId,userId).eq(OnlineMs::getToId,openid);
+            wrapper.or();
+            wrapper.eq(OnlineMs::getToId,userId).eq(OnlineMs::getFromId,openid);
+            wrapper.orderByDesc(OnlineMs::getSendTime).last("limit 1");
+            OnlineMs onlineMs = onlineMsService.getOne(wrapper);
             MsgDto msgDto = new MsgDto();
             msgDto.setLastMsg(onlineMs.getLastContext());
             msgDto.setSendTime(onlineMs.getSendTime());
@@ -208,6 +237,8 @@ public class OnlineMsController {
             int count = onlineMsService.count(wrapper);
             msgDto.setUnread(count);
         }
+        ListUtil.sortByProperty(msgList,"sendTime");
+        ListUtil.reverse(msgList);
         return R.success(msgList);
     }
 }

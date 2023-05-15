@@ -65,6 +65,7 @@ public class PssTest {
     private OnlineMsService onlineMsService;
     @Resource
     private UserService userService;
+
     @Test
     public void testMapper() {
         String s = "1651029218248720386";
@@ -75,7 +76,7 @@ public class PssTest {
 
     @Test
     public void testSelectDrug() {
-        int page = 1,pageSize = 2;
+        int page = 1, pageSize = 2;
         LambdaQueryWrapper<Task> qw = new LambdaQueryWrapper<>();
 
 //        qw
@@ -95,7 +96,7 @@ public class PssTest {
     }
 
     @Test
-    void testXXX(){
+    void testXXX() {
         // 按消息与每个人的最后一条查
         LambdaQueryWrapper<OnlineMs> wrap = new LambdaQueryWrapper<>();
         String openid = "oI1vd5BUGnDzqKfkJbprGklQnIDk";
@@ -105,19 +106,19 @@ public class PssTest {
                 .or()
                 .eq(OnlineMs::getToId, openid);
         List<OnlineMs> list = onlineMsService.list(wrap);
-        ListUtil.sortByProperty(list,"sendTime");
+        ListUtil.sortByProperty(list, "sendTime");
         ListUtil.reverse(list);
         list.forEach(System.out::println);
         HashMap<String, OnlineMs> map = new HashMap<>();
         for (OnlineMs onlineMs : list) {
-            if (Objects.equals(onlineMs.getFromId(),openid)){
-                map.put(onlineMs.getToId(),onlineMs);
-            }else if (Objects.equals(onlineMs.getToId(),openid)){
-                map.put(onlineMs.getFromId(),onlineMs);
+            if (Objects.equals(onlineMs.getFromId(), openid)) {
+                map.put(onlineMs.getToId(), onlineMs);
+            } else if (Objects.equals(onlineMs.getToId(), openid)) {
+                map.put(onlineMs.getFromId(), onlineMs);
             }
         }
         Set<String> userIds = map.keySet();
-        userIds.forEach(key->{
+        userIds.forEach(key -> {
             System.out.println(key);
             System.out.println(map.get(key));
         });
@@ -125,7 +126,8 @@ public class PssTest {
         List<MsgDto> msgList = new ArrayList<>();
         for (String userId : userIds) {
             LambdaQueryWrapper<OnlineMs> qw = new LambdaQueryWrapper<>();
-            qw.eq(OnlineMs::getFromId,userId).or().eq(OnlineMs::getToId,userId).orderByDesc(OnlineMs::getSendTime).last("limit 1");
+            qw.eq(OnlineMs::getFromId, userId).or().eq(OnlineMs::getToId, userId);
+            qw.orderByDesc(OnlineMs::getSendTime).last("limit 1");
             OnlineMs one = onlineMsService.getOne(qw);
             MsgDto msgDto = new MsgDto();
             msgDto.setLastMsg(one.getLastContext());
@@ -138,12 +140,10 @@ public class PssTest {
         }
         for (MsgDto msgDto : msgList) {
             LambdaQueryWrapper<OnlineMs> wrap1 = new LambdaQueryWrapper<>();
-            wrap1.eq(OnlineMs::getFromId, openid)
-                    .eq(OnlineMs::getToId, msgDto.getId())
-                    .or()
-                    .eq(OnlineMs::getToId, openid)
-                    .eq(OnlineMs::getFromId, msgDto.getId())
-                    .orderByDesc(OnlineMs::getSendTime).last("limit 1");
+            wrap1.eq(OnlineMs::getFromId, openid).eq(OnlineMs::getToId, msgDto.getId());
+            wrap1.or();
+            wrap1.eq(OnlineMs::getToId, openid).eq(OnlineMs::getFromId, msgDto.getId());
+            wrap1.orderByDesc(OnlineMs::getSendTime).last("limit 1");
             OnlineMs one = onlineMsService.getOne(wrap1);
             msgDto.setSendTime(one.getSendTime());
             msgDto.setLastMsg(one.getLastContext());
@@ -159,47 +159,107 @@ public class PssTest {
         msgList.forEach(System.out::println);
     }
 
-    @Test
-    public void  websorket(){//RedisMsgDto.class
 
-        Object o = stringRedisTemplate.opsForHash().get(REDIS_MSG_KEY+"ss", "11");
-        RedisMsgDto bean = JSON.to(RedisMsgDto.class,o);
+    @Test
+    void ltttt(){
+        String openid = "oI1vd5BUGnDzqKfkJbprGklQnIDk";
+        //分组查询
+        LambdaQueryWrapper<OnlineMs> wrap = new LambdaQueryWrapper<>();
+        wrap.groupBy(OnlineMs::getFromId).groupBy(OnlineMs::getToId).select(OnlineMs::getFromId, OnlineMs::getSendTime, OnlineMs::getIsRead,
+                OnlineMs::getLastContext, OnlineMs::getToId, OnlineMs::getId);
+        wrap.eq(OnlineMs::getFromId, openid)
+                .or()
+                .eq(OnlineMs::getToId, openid);
+        wrap.orderByDesc(OnlineMs::getSendTime);
+        List<OnlineMs> list = onlineMsService.list(wrap);
+        //按时间升序排序
+//        ListUtil.sortByProperty(list,"sendTime");
+//        ListUtil.reverse(list);
+        //key为用户id,value为消息对象  最终留最后一条消息
+        HashMap<String, OnlineMs> map = new HashMap<>();
+        for (OnlineMs onlineMs : list) {
+            //将对方的id存进去
+            if (Objects.equals(onlineMs.getFromId(),openid)){
+                map.put(onlineMs.getToId(),onlineMs);
+            }else if (Objects.equals(onlineMs.getToId(),openid)){
+                map.put(onlineMs.getFromId(),onlineMs);
+            }
+        }
+        Set<String> userIds = map.keySet();
+        List<MsgDto> msgList = new ArrayList<>();
+        for (String userId : userIds) {
+            LambdaQueryWrapper<OnlineMs> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(OnlineMs::getFromId,userId).eq(OnlineMs::getToId,openid);
+            wrapper.or();
+            wrapper.eq(OnlineMs::getToId,userId).eq(OnlineMs::getFromId,openid);
+            wrapper.orderByDesc(OnlineMs::getSendTime).last("limit 1");
+            OnlineMs onlineMs = onlineMsService.getOne(wrapper);
+            MsgDto msgDto = new MsgDto();
+            msgDto.setLastMsg(onlineMs.getLastContext());
+            msgDto.setSendTime(onlineMs.getSendTime());
+            Map<String, String> oneInfo = userService.getOneInfo(userId);
+            msgDto.setHead(oneInfo.get("head"));
+            msgDto.setName(oneInfo.get("username"));
+            msgDto.setId(userId);
+            msgList.add(msgDto);
+        }
+        System.out.println("====================111111==================");
+        msgList.forEach(System.out::println);
+        for (MsgDto msgDto : msgList) {
+            //未读消息
+            LambdaQueryWrapper<OnlineMs> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(OnlineMs::getToId, openid)
+                    .eq(OnlineMs::getFromId, msgDto.getId())
+                    .eq(OnlineMs::getIsRead, 0);
+            int count = onlineMsService.count(wrapper);
+            msgDto.setUnread(count);
+        }
+        System.out.println("====================22222==================");
+        msgList.forEach(System.out::println);
+    }
+    @Test
+    public void websorket() {//RedisMsgDto.class
+
+        Object o = stringRedisTemplate.opsForHash().get(REDIS_MSG_KEY + "ss", "11");
+        RedisMsgDto bean = JSON.to(RedisMsgDto.class, o);
 
         System.out.println(bean);
     }
+
     @Test
-    public void dmsom(){
+    public void dmsom() {
         RedisMsgDto redisMsgDto = new RedisMsgDto();
         redisMsgDto.setMsg("message");
         redisMsgDto.setSendTime(LocalDateTime.now());
-        stringRedisTemplate.opsForHash().put(REDIS_MSG_KEY+"ss", "11", JSON.toJSONString(redisMsgDto));
+        stringRedisTemplate.opsForHash().put(REDIS_MSG_KEY + "ss", "11", JSON.toJSONString(redisMsgDto));
     }
+
     @Test
-    void testZjsave(){
+    void testZjsave() {
         PostNewParamDto postNewParamDto = new PostNewParamDto();
         postNewParamDto.setUrls("sss");
         postNewParamDto.setLocation("青岛");
         postNewParamDto.setText("打一下肖禹树");
         postNewParamDto.setIsVideo(0);
         postNewParamDto.setTopicId("1649038958394376193");
-        postService.savePost("oI1vd5DC3H0lVyJizpK58ZPS9Mz8",postNewParamDto,new Post());
+        postService.savePost("oI1vd5DC3H0lVyJizpK58ZPS9Mz8", postNewParamDto, new Post());
     }
 
     @Test
-    void  gpt(){
-        Map<String,String> headers = new HashMap<String,String>();
-        headers.put("Content-Type","application/json;charset=UTF-8");
+    void gpt() {
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Content-Type", "application/json;charset=UTF-8");
 
         JSONObject json = new JSONObject();
         //选择模型
-        json.set("model","text-davinci-003");
+        json.set("model", "text-davinci-003");
         //添加我们需要输入的内容
-        json.set("prompt","在中国一个25岁的男生应该有多少存款？");
-        json.set("temperature",0.9);
-        json.set("max_tokens",2048);
-        json.set("top_p",1);
-        json.set("frequency_penalty",0.0);
-        json.set("presence_penalty",0.6);
+        json.set("prompt", "在中国一个25岁的男生应该有多少存款？");
+        json.set("temperature", 0.9);
+        json.set("max_tokens", 2048);
+        json.set("top_p", 1);
+        json.set("frequency_penalty", 0.0);
+        json.set("presence_penalty", 0.6);
 
         HttpResponse response = HttpRequest.post("https://api.openai.com/v1/completions")
                 .headerMap(headers, false)
@@ -210,8 +270,9 @@ public class PssTest {
 
         System.out.println(response.body());
     }
+
     @Test
-    void djsj(){
+    void djsj() {
 //        Task task = new Task();
 //        Date date = Date.from(taskNewDto.getLimitTime().atZone(ZoneId.systemDefault()).toInstant());
 //        task.setLimitTime(date);
@@ -228,11 +289,11 @@ public class PssTest {
         LambdaQueryWrapper<Task> qw = new LambdaQueryWrapper<>();
         String search = "胶州";
         qw.like(!StringUtil.isNullOrEmpty(search), Task::getLocation, search)
-        .or()
-        .like(!StringUtil.isNullOrEmpty(search), Task::getDetails, search)
-        .or()
-        .like(!StringUtil.isNullOrEmpty(search), Task::getTitle, search);
-        qw.eq(!StringUtil.isNullOrEmpty(typeId),Task::getTypeId,typeId).eq(Task::getState, 1).orderByDesc(Task::getReleaseTime);
+                .or()
+                .like(!StringUtil.isNullOrEmpty(search), Task::getDetails, search)
+                .or()
+                .like(!StringUtil.isNullOrEmpty(search), Task::getTitle, search);
+        qw.eq(!StringUtil.isNullOrEmpty(typeId), Task::getTypeId, typeId).eq(Task::getState, 1).orderByDesc(Task::getReleaseTime);
 //        qw.eq(!StringUtil.isNullOrEmpty(typeId), Task::getTypeId, typeId).like(!StringUtil.isNullOrEmpty(search), Task::getLocation, search).eq(Task::getState, 1).orderByDesc(Task::getReleaseTime)
 //                .or()
 //                .eq(!StringUtil.isNullOrEmpty(typeId), Task::getTypeId, typeId).like(!StringUtil.isNullOrEmpty(search), Task::getDetails, search).eq(Task::getState, 1).orderByDesc(Task::getReleaseTime)
@@ -241,13 +302,14 @@ public class PssTest {
         List<Task> taskList = taskService.list(qw);
         System.out.println(taskList);
     }
+
     @Test
-    void nvdni(){
+    void nvdni() {
 
         RedisMsgDto redisMsgDto = new RedisMsgDto();
         redisMsgDto.setMsg("message");
         redisMsgDto.setSendTime(LocalDateTime.now());
-        stringRedisTemplate.opsForHash().put(REDIS_MSG_KEY+"key","hashkey", JSON.toJSONString(redisMsgDto));
+        stringRedisTemplate.opsForHash().put(REDIS_MSG_KEY + "key", "hashkey", JSON.toJSONString(redisMsgDto));
         Object o = stringRedisTemplate.opsForHash().get(REDIS_MSG_KEY + "key", "hashkey");
         RedisMsgDto redisMsgDtoss = JSON.to(RedisMsgDto.class, o);
         System.out.println(redisMsgDtoss);
@@ -260,10 +322,12 @@ public class PssTest {
 //        task.setLimitTime(limitTimed);
 //        taskService.updateById(task);
     }
+
     @Resource
     TaskMapper taskMapper;
+
     @Test
-    void nsni(){
+    void nsni() {
 
 //// 使用 Lambda 表达式
 //        T result = taskMapper.list(new QueryWrapper<Task>().lambda().orderByAsc(Func.rand()).last("LIMIT 1")).get(0);
@@ -278,18 +342,20 @@ public class PssTest {
 //        T result = baseMapper.selectOne(new QueryWrapper<T>().orderByAsc(Func.rand()).last("LIMIT 1"));
 
     }
+
     @Test
     void contextLoads() {
-        String str = "915950092@qq.com" ;
+        String str = "915950092@qq.com";
 
-        String[] result = str.split("@") ;
-        String sss= result[0];
+        String[] result = str.split("@");
+        String sss = result[0];
         System.out.println(sss);
 //        for (int i = 0; i < result.length; i++) {
 ////            String[] temp = result[i].split("=") ;
 ////            System.out.println(temp[0]+" = "+temp[1]);
 //        }
     }
+
     @Test
     public void register() throws IOException {
 //        {
@@ -334,33 +400,34 @@ public class PssTest {
         String appid = "";
         params.add("appid", appid);
         String secret = "";
-        params.add("secret",secret);
+        params.add("secret", secret);
         String js_code = "";
-        params.add("js_code",js_code);
+        params.add("js_code", js_code);
         String grant_type = "authorization_code";
-        params.add("grant_type",grant_type);
+        params.add("grant_type", grant_type);
 //        String result = HttpRestUtils.get(url,params);
 //        System.out.println(result);
     }
 
     @Test
-    void sads(){
-        String s="{\"qq\":\"949516815\",\"nickname\":\".\",\"avatar\":\"https://q1.qlogo.cn/g?b=qq&nk=949516815&s=40\",\"email\":\"949516815@qq.com\",\"url\":\"https://user.qzone.qq.com/949516815\"}";
-        com.alibaba.fastjson.JSONObject jsonObject= com.alibaba.fastjson.JSON.parseObject(s);
+    void sads() {
+        String s = "{\"qq\":\"949516815\",\"nickname\":\".\",\"avatar\":\"https://q1.qlogo.cn/g?b=qq&nk=949516815&s=40\",\"email\":\"949516815@qq.com\",\"url\":\"https://user.qzone.qq.com/949516815\"}";
+        com.alibaba.fastjson.JSONObject jsonObject = com.alibaba.fastjson.JSON.parseObject(s);
         System.out.println(jsonObject.getString("qq"));
     }
+
     @Test
-    void pmpm(){
+    void pmpm() {
         try {
             String qq = "1480069996";
             //api url地址
-            String url = "https://api.lixingyong.com/api/qq?id="+qq;
+            String url = "https://api.lixingyong.com/api/qq?id=" + qq;
 //            String url = "https://api.lixingyong.com/api/qq";
             //post请求
 //                HttpMethod method = HttpMethod.GET;
             // 封装参数，千万不要替换为Map与HashMap，否则参数无法传递
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-            params.set("id",qq);
+            params.set("id", qq);
             System.out.print("发送数据：" + params);
             //发送http请求并返回结果
 //            String result = HttpRestUtils.get(url, params);
@@ -369,8 +436,8 @@ public class PssTest {
 //            com.alibaba.fastjson.JSONObject jsonObject = com.alibaba.fastjson.JSON.parseObject(result);
 //            String username= jsonObject.getString("nickname");
 //            log.info("Username:[{}]",username);
-            String head = "http://q1.qlogo.cn/g?b=qq&nk="+qq+"&s=640";
-            log.info("head:[{}]",head);
+            String head = "http://q1.qlogo.cn/g?b=qq&nk=" + qq + "&s=640";
+            log.info("head:[{}]", head);
 //            System.out.print("接收反馈：" + result);
             User user = new User();
 //            user.setUsername(username);
@@ -383,27 +450,28 @@ public class PssTest {
         }
 
     }
+
     @Test
-    void sfon(){
+    void sfon() {
         //get
         RestTemplate restTemplate = new RestTemplate();
-        restTemplate.getMessageConverters().set(1,new StringHttpMessageConverter(StandardCharsets.UTF_8));
+        restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8));
         String uri = "https://apis.map.qq.com/ws/location/v1/ip?key=VSXBZ-S76LQ-N6K5O-G3BNK-WCTYF-WSF2T";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/json;charset=UTF-8"));
         HttpEntity<String> entity = new HttpEntity<>(headers);
         ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.GET, entity, String.class);
         String body = response.getBody();
-        System.out.println("body:"+body);
+        System.out.println("body:" + body);
         com.alibaba.fastjson.JSONObject jsonObject = com.alibaba.fastjson.JSON.parseObject(body);
         String result = jsonObject.getString("result");
         com.alibaba.fastjson.JSONObject jsonObject1 = com.alibaba.fastjson.JSON.parseObject(result);
         String ad_info = jsonObject1.getString("ad_info");
-        System.out.println("地址："+ad_info);
+        System.out.println("地址：" + ad_info);
         System.out.println(response);
         System.out.println(response.getBody());
 
-        System.out.println("result:"+result);
+        System.out.println("result:" + result);
         //post
 //  MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
 //        params.add("user", "你好");
@@ -424,8 +492,9 @@ public class PssTest {
 //                +jsonObject.getString("city")+jsonObject.getString("district");
 //        System.out.println(address);
     }
+
     @Test
-    void sdlkfnion(){
+    void sdlkfnion() {
 //        Set keys1 = redisTemplate.boundHashOps("HashKey").keys();
 //        System.out.println(keys1);
 //        BoundHashOperations hashKey = redisTemplate.boundHashOps("26");
@@ -436,8 +505,8 @@ public class PssTest {
 //        RedisOperations operations = redisTemplate.opsForHash().getOperations();
 //        System.out.println(operations);
 
-        Set<String> keys = redisTemplate.keys("M"+"*");  //获取M开头的key
-        if(!keys.isEmpty()){
+        Set<String> keys = redisTemplate.keys("M" + "*");  //获取M开头的key
+        if (!keys.isEmpty()) {
             for (int i = 0; i < keys.size(); i++) {
                 System.out.println(keys.toArray()[i]);//变为数组取第一个
                 String o = (String) keys.toArray()[i];
@@ -445,7 +514,7 @@ public class PssTest {
                 System.out.println(m);
             }
         }
-        System.out.println( keys);
+        System.out.println(keys);
 //        Iterator<String> it1 = keys.iterator();
 //        System.out.println("toString: " + it1.toString());
 //        while (it1.hasNext()) {
@@ -457,8 +526,9 @@ public class PssTest {
 //            }
 
     }
+
     @Test
-    void skmndo(){
+    void skmndo() {
         //连接阿里云
         DefaultProfile profile = DefaultProfile.getProfile("cn-hangzhou", "LTAI5tEgEn2SFs9NTeMH2QJ1", "5qoYF5ptXC2F8j0WXGoFC27CmHBt8K");
         /** use STS Token
@@ -486,77 +556,84 @@ public class PssTest {
         }
 
 
-
     }
+
     @Test
-    void  ssdsd(){
+    void ssdsd() {
         HashMap<String, String> map = new HashMap<>();
-        map.put("phone","18119451226");
-        map.put("code","5837");
-        int ss=0;
+        map.put("phone", "18119451226");
+        map.put("code", "5837");
+        int ss = 0;
         for (String key : map.keySet()) {
             String value = map.get(key);
-            if (key.equals("phone")){
-                ss=1;
+            if (key.equals("phone")) {
+                ss = 1;
             }
-            System.out.println("key: "+key);
+            System.out.println("key: " + key);
             System.out.println(key + "  " + value);
         }
-        System.out.println("ss: "+ss);
+        System.out.println("ss: " + ss);
     }
+
     @Test
-    void  sdsafcv(){
-        Set<String> keys = redisTemplate.keys("TaskKind"+"*");  //获取M开头的所有key
-        if(!keys.isEmpty()){
+    void sdsafcv() {
+        Set<String> keys = redisTemplate.keys("TaskKind" + "*");  //获取M开头的所有key
+        if (!keys.isEmpty()) {
             for (int i = 0; i < keys.size(); i++) {
                 String m = (String) keys.toArray()[i];
                 Boolean delete = redisTemplate.delete(m);
-                log.info("TaskKind:[{}]",delete);
+                log.info("TaskKind:[{}]", delete);
             }
         }
     }
+
     @Test
-    void sxbxc(){
+    void sxbxc() {
         ArrayList<String> cc = new ArrayList<>();
         cc.add("aa");
         cc.add("bb");
         cc.add("cc");
         System.out.println(cc);
     }
+
     @Test
-    void nmi(){
+    void nmi() {
         LocalDateTime now = LocalDateTime.now();
-        log.info("当前时间：{}",now);
+        log.info("当前时间：{}", now);
 //        int i = limitTime.getSecond() - now.getSecond();
         LocalDateTime limitTime = LocalDateTime.now().plusHours(3);
-        log.info("之后:{}",limitTime);
+        log.info("之后:{}", limitTime);
         Duration between = Duration.between(now, limitTime);
         long i = between.toMinutes();
-        log.info("时间差：{}",i);
+        log.info("时间差：{}", i);
     }
+
     @Test
-    void dnis(){
+    void dnis() {
         String ss = "2022-10-28 01:15:27";
         LocalDateTime ss1 = LocalDateTime.parse("2022-10-28T01:15:27");
         LambdaQueryWrapper<Task> wrap = new LambdaQueryWrapper<>();
-        wrap.eq(Task::getReleaseTime,ss1);
+        wrap.eq(Task::getReleaseTime, ss1);
         Task one = taskService.getOne(wrap);
         System.out.println(one);
     }
+
     @Test
-    void vxfd(){
-        int ss=100;
+    void vxfd() {
+        int ss = 100;
         for (int i = 0; i < 11; i++) {
-            ss= (int) (ss*1.5);
+            ss = (int) (ss * 1.5);
             System.out.println(ss);
         }
     }
+
     @Test
-    void  kncn(){
+    void kncn() {
         System.out.println(LocalDateTime.now().toLocalDate());
     }
+
     @Test
-    void fni(){
+    void fni() {
         String condition = "饭";
         LambdaQueryWrapper<Task> wrap = new LambdaQueryWrapper<>();
 //        wrap.like(null != condition,Task::getName,condition)

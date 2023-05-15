@@ -18,7 +18,6 @@ ruoyi:
 # 开发环境配置
 server:
   # 服务器的HTTP端口，默认为8080
-#  port: 443
   port: 442
   ssl:
     keyStore: classpath:9906369_www.qjpqjp.top.pfx

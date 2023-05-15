@@ -11,8 +11,6 @@ import com.ruoyi.bang.mapper.OnlineMsMapper;
 import com.ruoyi.bang.service.OnlineMsService;
 import com.ruoyi.bang.service.UserService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -29,9 +27,8 @@ import static com.ruoyi.bang.common.Constants.REDIS_MSG_KEY;
 public class OnlineMsServiceImpl extends ServiceImpl<OnlineMsMapper, OnlineMs> implements OnlineMsService {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
     @Resource
-    private RedisTemplate<Object,Object> redisTemplate;
-    @Autowired
     private UserService userService;
 
     @Override
